@@ -1,62 +1,41 @@
 import React, { Component } from 'react';
 import LoggedOut from '../components/LoggedOut';
 import LoggedIn from '../components/LoggedIn';
-import config from '../config';
-
-const defaultFetchOptions = {
-  method: 'POST',
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  }
-};
+import { fetchLogin, receivedLogout } from '../redux/actions';
+import { connect } from 'react-redux';
 
 class Page extends Component {
   constructor() {
     super();
 
-    this.state = {
-      userLoggedIn: false,
-      errorMessage: '',
-      userId: null
-    }
     this.logUserIn = this.logUserIn.bind(this);
-  }
-
-  parseLogInResponse({user = {}}) {
-    if (user.success) {
-      this.setState({
-        userLoggedIn: true,
-        userId: user.id
-      });
-    } else {
-      this.setState({
-        errorMessage: 'Sorry that wasnt correct'
-      })
-    }
+    this.logUserOut = this.logUserOut.bind(this);
   }
 
   logUserIn(username, password) {
-    const fetchOptions = Object.assign({}, defaultFetchOptions);
-    fetchOptions.body = JSON.stringify({
-      username: username,
-      password: password
-    });
-    return fetch(config.USER_URL, fetchOptions)
-      .then(results => results.json())
-      .then(response => this.parseLogInResponse(response));
+    this.props.dispatch(fetchLogin(username, password))
+  }
+
+  logUserOut() {
+    this.props.dispatch(receivedLogout());
   }
 
   render() {
     return (
       <div>
-        {this.state.userLoggedIn ?
-          (<LoggedIn userId={this.state.userId} />) :
-          (<LoggedOut errorMessage={this.state.errorMessage} logUserIn={this.logUserIn} />)
+        {this.props.user.success ?
+          (<LoggedIn userId={this.props.user.id} logUserOut={this.logUserOut} />) :
+          (<LoggedOut errorMessage={this.props.errorMessage} logUserIn={this.logUserIn} />)
         }
       </div>
     )
   }
 }
 
-export default Page;
+function mapStateToProps(state) {
+  return {
+    user: state.user,
+    errorMessage: state.errorMessage
+  }
+}
+export default connect(mapStateToProps)(Page);
